@@ -12,15 +12,25 @@ const uploadFile = async (req, res) => {
     return res.status(400).json({ error: "No file uploaded" });
   }
 
+  // Optional metadata from the form
+  const { uploadedBy, tags, description, project } = req.body;
+
   try {
     const readableStream = Readable.from(req.file.buffer);
     const uploadStream = bucket.openUploadStream(req.file.originalname, {
       contentType: req.file.mimetype,
+      metadata: {
+        uploadedBy,
+        tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
+        description,
+        project,
+      },
     });
 
     const fileId = uploadStream.id;
 
-    readableStream.pipe(uploadStream)
+    readableStream
+      .pipe(uploadStream)
       .on("error", (err) => {
         console.error("Upload Error:", err);
         res.status(500).json({ error: "File upload failed" });
@@ -28,7 +38,7 @@ const uploadFile = async (req, res) => {
       .on("finish", () => {
         res.status(200).json({
           message: "File uploaded successfully",
-          fileId: fileId,
+          fileId,
           filename: req.file.originalname,
         });
       });

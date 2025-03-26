@@ -11,7 +11,14 @@ router.get("/", async (req, res) => {
 
     const files = await bucket
       .find({
-        filename: { $regex: query, $options: "i" },
+        $or: [
+          { filename: { $regex: query, $options: "i" } },
+          { contentType: { $regex: query, $options: "i" } },
+          { "metadata.uploadedBy": { $regex: query, $options: "i" } },
+          { "metadata.description": { $regex: query, $options: "i" } },
+          { "metadata.project": { $regex: query, $options: "i" } },
+          { "metadata.tags": { $regex: query, $options: "i" } },
+        ],
       })
       .toArray();
 
