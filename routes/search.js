@@ -1,30 +1,22 @@
 const express = require("express");
+const { searchFiles } = require("../services/searchService");
+
 const router = express.Router();
 
 router.get("/", async (req, res) => {
-  const query = req.query.q?.toLowerCase() || "";
-
-  if (!query) return res.json([]);
-
   try {
     const bucket = req.app.locals.bucket;
 
-    const files = await bucket
-      .find({
-        $or: [
-          { filename: { $regex: query, $options: "i" } },
-          { contentType: { $regex: query, $options: "i" } },
-          { "metadata.uploadedBy": { $regex: query, $options: "i" } },
-          { "metadata.description": { $regex: query, $options: "i" } },
-          { "metadata.project": { $regex: query, $options: "i" } },
-          { "metadata.tags": { $regex: query, $options: "i" } },
-        ],
-      })
-      .toArray();
+    const results = await searchFiles(bucket, {
+      q: req.query.q,
+      uploadedBy: req.query.uploadedBy,
+      tag: req.query.tag,
+      fileType: req.query.fileType,
+    });
 
-    res.json(files);
-  } catch (error) {
-    console.error("Search error:", error);
+    res.json(results);
+  } catch (err) {
+    console.error("Search error:", err);
     res.status(500).json({ error: "Error fetching search results" });
   }
 });
